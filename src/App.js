@@ -2,11 +2,16 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-class CSC {
+// const SERVICE = 'fitness_machine';
+const SERVICE = 'cycling_speed_and_cadence';
+// const CHARACTERISTIC = 'indoor_bike_data';
+const CHARACTERISTIC = 'csc_measurement';
+
+class CSC { 
   async request() {
     const options = {
       filters: [{
-        services: ['cycling_speed_and_cadence']
+        services: [SERVICE]
       }]
     }
 
@@ -22,8 +27,8 @@ class CSC {
       await this.request();
     }
     const server = await this.device.gatt.connect();
-    const service = await server.getPrimaryService("cycling_speed_and_cadence");
-    this.char = await service.getCharacteristic("csc_measurement");
+    const service = await server.getPrimaryService(SERVICE);
+    this.char = await service.getCharacteristic(CHARACTERISTIC);
     this.device.addEventListener("gattserverdisconnected", () => {
       this.onDisconnected();
     });
@@ -46,17 +51,17 @@ class CSC {
 
 function App() {
   const csc = React.useRef(() => new CSC());
-
+  const [v, setV] = React.useState('empty');
   window.csc = csc.current();
 
-  const cadence = (prev, curr) => {
+  const cadence1 = (prev, curr) => {
     const revDelta = curr.totalCrankRevolutions - prev.totalCrankRevolutions;
     const timeDelta = curr.lastCrankTime - prev.lastCrankTime;
     const minuteRatio = 60 / timeDelta;
     return revDelta * minuteRatio;
   }
   
-  const callback = (event) => {
+  const callback1 = (event) => {
     const data = event.target.value;
     // console.log(data);
     const flags = data.getUint8(0);
@@ -78,36 +83,50 @@ function App() {
     if (!window.lastOutput) {
       window.lastOutput = output;
     } else {
-      const c = cadence(window.lastOutput, output);
+      const c = cadence1(window.lastOutput, output);
+      setV(c)
       window.lastOutput = output;
       console.log('cadence' + c)
     }
     
-    
-    
     return output;
+  }
+
+  const cadence2 = (prev, curr) => {
+    const revDelta = curr.totalCrankRevolutions - prev.totalCrankRevolutions;
+    const timeDelta = curr.lastCrankTime - prev.lastCrankTime;
+    const minuteRatio = 60 / timeDelta;
+    return revDelta * minuteRatio;
+  }
+  
+  const callback2 = (event) => {
+    const data = event.target.value;
+    // console.log(data);
+    const flags = data.getUint8(0);
+    const cadenceDataPresent = flags & 0x1;
+    const crankDataPresent = flags & 0x2;
+
+
+    // console.log('cadenceDataPresent', cadenceDataPresent)
+    // console.log('crankDataPresent', crankDataPresent)
+    // console.log('speed', data.getUint16(2, true) / 100, 'kilometers')
+    const wasd = data.getUint16(6, true) * .5;
+    setV(wasd)
+    window.wasd = wasd;
+    console.log('cadence', wasd)
   }
   
   const onClick = async () => {
     const wasd = await csc.current().connect();
-    wasd.addEventListener('characteristicvaluechanged', callback);
+    wasd.addEventListener('characteristicvaluechanged', callback1);
+    // wasd.addEventListener('characteristicvaluechanged', callback2);
   }
   
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p onClick={onClick}>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <button onClick={onClick}>Start</button>
+        <h1>{v}</h1>
       </header>
     </div>
   );
