@@ -64,6 +64,8 @@ class CSC {
 function App() {
   const csc = React.useRef(() => new CSC());
   const [v, setV] = React.useState('empty');
+  const [cadence, setCadence] = React.useState(0);
+  const [speed, setSpeed] = React.useState(0);
   window.csc = csc.current();
 
   const cadence1 = (prev, curr) => {
@@ -115,35 +117,30 @@ function App() {
     const data = event.target.value;
     // console.log(data);
     const flags = data.getUint16(0, true);
-
-    console.table([
-      flags & (1 << 0),
-      flags & (1 << 1),
-      flags & (1 << 2),
-      flags & (1 << 3),
-      flags & (1 << 4),
-      flags & (1 << 5),
-      flags & (1 << 6),
-      flags & (1 << 7),
-      flags & (1 << 8),
-      flags & (1 << 9),
-      flags & (1 << 10),
-      flags & (1 << 11),
-      flags & (1 << 12),
-      flags & (1 << 13),
-      flags & (1 << 14),
-      flags & (1 << 15),
-      flags & (1 << 16),
-    ])
-
+    // var ble_bytes = new Uint8Array([0x44, 0x02, 0x52, 0x03, 0x5A, 0x00, 0x08, 0x00, 0x00]).buffer;
+    // var view = new DataView(ble_bytes)
+    
+    // flags = view.getUint16(0, true);
+    // var i;
+    // for (i = 0; i < 16; i++) {
+    //   console.log('flags[' + i + '] = ' + (!!(flags >>> i & 1)));
+    // }
+    // console.log('Instantaneous Speed = ' + view.getUint16(2, true) / 100)
+    // console.log('Instantaneous Cadence = ' + view.getUint16(4, true) * 0.5)
+    // console.log('Instantaneous Power  = ' + view.getInt16(6, true))
+    // console.log('Heart Rate  = ' + view.getUint8(8, true))
+    const parsedCadence = data.getUint16(4, true) * 0.5;
+    const parsedSpeed = data.getUint16(2, true) / 100;
+    setCadence(parsedCadence);
+    setSpeed(parsedSpeed);
 
     // console.log('cadenceDataPresent', cadenceDataPresent)
     // console.log('crankDataPresent', crankDataPresent)
     // console.log('speed', data.getUint16(2, true) / 100, 'kilometers')
-    const wasd = data.getUint16(6, true) * .5;
-    setV(wasd)
-    window.wasd = wasd;
-    console.log('cadence', wasd)
+    // const wasd = data.getUint16(6, true) * .5;
+    // setV(wasd)
+    // window.wasd = wasd;
+    // console.log('cadence', wasd)
   }
   
   const onClick = async () => {
@@ -159,7 +156,8 @@ function App() {
     <div className="App">
       <header className="App-header">
         <button onClick={onClick}>Start</button>
-        <h1>{v}</h1>
+        <h1>speed {speed}</h1>
+        <h1>cadence {cadence}</h1>
       </header>
     </div>
   );
