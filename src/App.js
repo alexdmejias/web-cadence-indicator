@@ -2,10 +2,22 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-// const SERVICE = 'fitness_machine';
-const SERVICE = 'cycling_speed_and_cadence';
-// const CHARACTERISTIC = 'indoor_bike_data';
-const CHARACTERISTIC = 'csc_measurement';
+const FITNESS_SERVICE = 'fitness_machine';
+const FITNESS_CHARACTERISTIC = 'indoor_bike_data';
+
+const CYCLING_SERVICE = 'cycling_speed_and_cadence';
+const CYCLING_CHARACTERISTIC = 'csc_measurement';
+
+const useFitness = true;
+let SERVICE;
+let CHARACTERISTIC;
+if (useFitness) {
+  SERVICE = FITNESS_SERVICE;
+  CHARACTERISTIC = FITNESS_CHARACTERISTIC;
+} else {
+  SERVICE = CYCLING_SERVICE;
+  CHARACTERISTIC = CYCLING_CHARACTERISTIC
+}
 
 class CSC { 
   async request() {
@@ -61,7 +73,7 @@ function App() {
     return revDelta * minuteRatio;
   }
   
-  const callback1 = (event) => {
+  const cyclingCallback = (event) => {
     const data = event.target.value;
     // console.log(data);
     const flags = data.getUint8(0);
@@ -99,12 +111,30 @@ function App() {
     return revDelta * minuteRatio;
   }
   
-  const callback2 = (event) => {
+  const fitnessCallback = (event) => {
     const data = event.target.value;
     // console.log(data);
-    const flags = data.getUint8(0);
-    const cadenceDataPresent = flags & 0x1;
-    const crankDataPresent = flags & 0x2;
+    const flags = data.getUint16(0, true);
+
+    console.table([
+      flags & (1 << 0),
+      flags & (1 << 1),
+      flags & (1 << 2),
+      flags & (1 << 3),
+      flags & (1 << 4),
+      flags & (1 << 5),
+      flags & (1 << 6),
+      flags & (1 << 7),
+      flags & (1 << 8),
+      flags & (1 << 9),
+      flags & (1 << 10),
+      flags & (1 << 11),
+      flags & (1 << 12),
+      flags & (1 << 13),
+      flags & (1 << 14),
+      flags & (1 << 15),
+      flags & (1 << 16),
+    ])
 
 
     // console.log('cadenceDataPresent', cadenceDataPresent)
@@ -118,8 +148,11 @@ function App() {
   
   const onClick = async () => {
     const wasd = await csc.current().connect();
-    wasd.addEventListener('characteristicvaluechanged', callback1);
-    // wasd.addEventListener('characteristicvaluechanged', callback2);
+    if (useFitness) {
+      wasd.addEventListener('characteristicvaluechanged', fitnessCallback);
+    } else {
+      wasd.addEventListener('characteristicvaluechanged', cyclingCallback);
+    }
   }
   
   return (
